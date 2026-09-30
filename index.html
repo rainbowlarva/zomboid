@@ -337,37 +337,45 @@
 
     async function toggleItem(id, checked) {
 
-        state[id] = checked;
+    state[id] = checked;
+    render();
 
-        render();
+    const channel =
+        new BroadcastChannel("shared-checklist");
 
+    channel.postMessage({
+        id: id,
+        checked: checked
+    });
 
-        const { error } =
-            await supabase
-                .from("checklist")
-                .upsert({
-                    id: id,
-                    checked: checked
-                });
-
-
-        if (error) {
-
-            console.error(error);
-
-            statusElement.textContent =
-                "Failed to save change.";
-
-            statusElement.classList.add("error");
-
-            loadChecklist();
-
-            return;
-        }
+    channel.close();
 
 
-        statusElement.classList.remove("error");
+    const { error } =
+        await supabase
+            .from("checklist")
+            .update({
+                checked: checked
+            })
+            .eq("id", id);
+
+
+    if (error) {
+
+        console.error(error);
+
+        statusElement.textContent =
+            "Failed to save change.";
+
+        statusElement.classList.add("error");
+
+        loadChecklist();
+
+        return;
     }
+
+    statusElement.classList.remove("error");
+}
 
     supabase
         .channel("checklist-changes")
@@ -398,7 +406,24 @@
 
         .subscribe();
 
+
     loadChecklist();
+
+    const browserChannel =
+    new BroadcastChannel("shared-checklist");
+
+browserChannel.onmessage = (event) => {
+
+    const { id, checked } = event.data;
+
+    if (!id) {
+        return;
+    }
+
+    state[id] = checked;
+
+    render();
+};
 
 </script>
 
