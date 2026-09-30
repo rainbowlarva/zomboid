@@ -172,36 +172,49 @@
     const ITEMS = [
         {
             id: "item-1",
-            text: "Complete the first objective"
+            text: "Fashion Show - Theme a collection of outfits, take a group photo."
         },
 
         {
             id: "item-2",
-            text: "Find the hidden location"
+            text: "Three Star Sheft - Cook a full dinner, and eat it together around a table."
         },
 
         {
             id: "item-3",
-            text: "Talk to the NPC"
+            text: "Salad Fingers - Fill an entire backpack with spoons."
         },
 
         {
             id: "item-4",
-            text: "Collect the required item"
+            text: "Louisville Slugger - Clear an entire city block with only baseball bats."
         },
 
         {
             id: "item-5",
-            text: "Complete the final objective"
+            text: "Speedrunner - Cross the entire mall in under two minutes."
+        },
+
+        {
+            id: "item-6",
+            text: "Payday - Rob Sky Blue Banking."
+        },
+
+        {
+            id: "item-7",
+            text: "Grand Theft Everything - Steal ten cars."
+        },
+
+        {
+            id: "item-8",
+            text: "The Long Walk - Everyone must cross one end of the city to the other, exclusively on foot."
+        },
+
+        {
+            id: "item-9",
+            text: "The Louisville 5k - Kite a hoard of zombies around a full city block."
         }
     ];
-
-
-    /*
-     * ==========================================
-     * SUPABASE
-     * ==========================================
-     */
 
     import {
         createClient
@@ -324,7 +337,6 @@
 
     async function toggleItem(id, checked) {
 
-        // Update the UI immediately
         state[id] = checked;
 
         render();
@@ -385,11 +397,6 @@
         )
 
         .subscribe();
-
-
-    /*
-     * Start
-     */
 
     loadChecklist();
 
