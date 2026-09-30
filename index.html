@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shared Checklist</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #111318;
+            color: #f1f1f1;
+            font-family: Arial, Helvetica, sans-serif;
+
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+
+            padding: 50px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .progress {
+            height: 8px;
+            background: #292d35;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #4ade80;
+            transition: width 0.25s ease;
+        }
+
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            padding: 16px 18px;
+
+            background: #1a1d23;
+            border: 1px solid #292d35;
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            transition:
+                background 0.15s,
+                border-color 0.15s;
+        }
+
+        .item:hover {
+            background: #20242c;
+            border-color: #3a404c;
+        }
+
+        .checkbox {
+            width: 22px;
+            height: 22px;
+
+            border: 2px solid #666;
+            border-radius: 5px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition: 0.15s;
+        }
+
+        .item.checked .checkbox {
+            background: #4ade80;
+            border-color: #4ade80;
+        }
+
+        .checkbox::after {
+            content: "✓";
+            color: #111;
+            font-size: 15px;
+            font-weight: bold;
+
+            opacity: 0;
+        }
+
+        .item.checked .checkbox::after {
+            opacity: 1;
+        }
+
+        .text {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .item.checked .text {
+            color: #777;
+            text-decoration: line-through;
+        }
+
+        .status {
+            margin-top: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #f87171;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>My Checklist</h1>
+
+    <div class="subtitle">
+        Shared checklist — changes are visible to everyone.
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="checklist" id="checklist"></div>
+
+    <div class="status" id="status">
+        Connecting...
+    </div>
+
+</div>
+
+
+<script type="module">
+
+    const SUPABASE_URL = "https://jjdpdgrrnttponznkzah.supabase.co/rest/v1/";
+
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZHBkZ3JybnR0cG9uem5remFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjIyMjQsImV4cCI6MjEwNjE5ODIyNH0.pA_OwfUW3xPC9RU6Fr2P024HckH5QdnF1yEe1aqb0JQ";
+
+    const ITEMS = [
+        {
+            id: "item-1",
+            text: "Complete the first objective"
+        },
+
+        {
+            id: "item-2",
+            text: "Find the hidden location"
+        },
+
+        {
+            id: "item-3",
+            text: "Talk to the NPC"
+        },
+
+        {
+            id: "item-4",
+            text: "Collect the required item"
+        },
+
+        {
+            id: "item-5",
+            text: "Complete the final objective"
+        }
+    ];
+
+
+    /*
+     * ==========================================
+     * SUPABASE
+     * ==========================================
+     */
+
+    import {
+        createClient
+    } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+    const supabase = createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+    const checklistElement =
+        document.getElementById("checklist");
+
+    const progressBar =
+        document.getElementById("progressBar");
+
+    const statusElement =
+        document.getElementById("status");
+
+
+    let state = {};
+
+
+    function render() {
+
+        checklistElement.innerHTML = "";
+
+        let completed = 0;
+
+        ITEMS.forEach(item => {
+
+            const checked = state[item.id] === true;
+
+            if (checked) {
+                completed++;
+            }
+
+            const element =
+                document.createElement("div");
+
+            element.className =
+                "item" + (checked ? " checked" : "");
+
+            element.innerHTML = `
+                <div class="checkbox"></div>
+                <div class="text">
+                    ${escapeHTML(item.text)}
+                </div>
+            `;
+
+            element.addEventListener(
+                "click",
+                () => toggleItem(item.id, !checked)
+            );
+
+            checklistElement.appendChild(element);
+        });
+
+
+        const percentage =
+            ITEMS.length === 0
+                ? 0
+                : (completed / ITEMS.length) * 100;
+
+
+        progressBar.style.width =
+            percentage + "%";
+
+
+        statusElement.textContent =
+            `${completed} / ${ITEMS.length} completed`;
+    }
+
+
+    function escapeHTML(text) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent = text;
+
+        return div.innerHTML;
+    }
+
+
+    async function loadChecklist() {
+
+        const { data, error } =
+            await supabase
+                .from("checklist")
+                .select("id, checked");
+
+
+        if (error) {
+
+            console.error(error);
+
+            statusElement.textContent =
+                "Could not connect to checklist.";
+
+            statusElement.classList.add("error");
+
+            return;
+        }
+
+
+        state = {};
+
+        data.forEach(row => {
+            state[row.id] = row.checked;
+        });
+
+
+        render();
+    }
+
+
+
+    async function toggleItem(id, checked) {
+
+        // Update the UI immediately
+        state[id] = checked;
+
+        render();
+
+
+        const { error } =
+            await supabase
+                .from("checklist")
+                .upsert({
+                    id: id,
+                    checked: checked
+                });
+
+
+        if (error) {
+
+            console.error(error);
+
+            statusElement.textContent =
+                "Failed to save change.";
+
+            statusElement.classList.add("error");
+
+            loadChecklist();
+
+            return;
+        }
+
+
+        statusElement.classList.remove("error");
+    }
+
+    supabase
+        .channel("checklist-changes")
+
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "checklist"
+            },
+
+            payload => {
+
+                const row =
+                    payload.new;
+
+                if (!row || !row.id) {
+                    return;
+                }
+
+                state[row.id] =
+                    row.checked;
+
+                render();
+            }
+        )
+
+        .subscribe();
+
+
+    /*
+     * Start
+     */
+
+    loadChecklist();
+
+</script>
+
+</body>
+</html>
