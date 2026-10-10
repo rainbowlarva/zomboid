@@ -260,6 +260,12 @@
 
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZHBkZ3JybnR0cG9uem5remFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjIyMjQsImV4cCI6MjEwNjE5ODIyNH0.pA_OwfUW3xPC9RU6Fr2P024HckH5QdnF1yEe1aqb0JQ";
 
+    const checkSound = new Audio("./check.mp3");
+    checkSound.volume = 0.3;
+
+    const uncheckSound = new Audio("./uncheck.mp3");
+    uncheckSound.volume = 0.1;
+
     const ITEMS = [
         {
             id: "item-1",
@@ -324,6 +330,11 @@
         {
             id: "item-13",
             text: "Get licensed: Visit ABCDriving School and have a test administered by rainbowlarva."
+        },
+
+        {
+            id: "item-14",
+            text: "Jump the Homeless: Ollie over a zombie."
         },
 
         {
@@ -466,6 +477,15 @@
     async function toggleItem(id, checked) {
 
     state[id] = checked;
+    
+    if (checked) {
+    checkSound.currentTime = 0;
+    checkSound.play().catch(() => {});
+    } else {
+    uncheckSound.currentTime = 0;
+    uncheckSound.play().catch(() => {});
+}
+
     render();
 
     const channel =
